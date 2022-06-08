@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>资金信息</title>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="element.css">
+</head>
+<body>
+<div id="app" style="width: 80%; margin: 0 auto">
+    <h2>资金信息表</h2>
+
+    <el-row>
+        <el-col :span="6" style="margin-bottom: 10px">
+            <el-button type="primary" @click="add">新增</el-button>
+            <el-input v-model="name" style="width: 120%" placeholder="请输入基金名称关键词进行检索"
+                      @keyup.enter.native="search(1)"></el-input>
+        </el-col>
+    </el-row>
+
+    <el-table
+            :data="page.content"
+            v-loading="loading"
+            stripe
+            border
+            style="width: 100%">
+        <el-table-column
+                prop="fid"
+                label="基金序号">
+        </el-table-column>
+        <el-table-column
+                prop="name"
+                label="基金名称"
+                width="180">
+        </el-table-column>
+        <el-table-column
+                prop="ftype"
+                label="基金类型">
+        </el-table-column>
+        <el-table-column
+                prop="famount"
+                label="基金剩余量">
+        </el-table-column>
+        <el-table-column
+                prop="riskLevel"
+                label="风险等级">
+        </el-table-column>
+        <el-table-column
+                prop="fmanager"
+                label="基金经理">
+        </el-table-column>
+        <el-table-column
+                prop="flevel"
+                label="基金等级">
+        </el-table-column>
+        <el-table-column
+                prop="createTime"
+                label="创建时间">
+        </el-table-column>
+        <el-table-column
+                fixed="right"
+                label="操作"
+                width="100">
+            <template slot-scope="scope">
+                <el-button type="primary" icon="el-icon-edit" size="small" circle @click="edit(scope.row)"></el-button>
+                <el-button type="danger" icon="el-icon-delete" size="small" circle @click="del(scope.row.id)"></el-button>
+            </template>
+        </el-table-column>
+    </el-table>
+
+    <el-row type="flex" justify="center" style="margin-top: 10px">
+        <el-pagination
+                layout="prev, pager, next"
+                :page-size="pageSize"
+                :current-page="pageNum"
+                @prev-click="loadTable"
+                @current-change="loadTable"
+                @next-click="loadTable"
+                :total="page.totalElements">
+        </el-pagination>
+    </el-row>
+
+    <el-dialog
+            title="基金信息"
+            :visible.sync="dialogVisible"
+            width="30%">
+        <el-form ref="form" :model="form" label-width="80px">
+            <el-form-item label="基金ID">
+                <el-input v-model="form.fid"></el-input>
+            </el-form-item>
+            <el-form-item label="基金名称">
+                <el-input v-model="form.name"></el-input>
+            </el-form-item>
+            <el-form-item label="基金类型">
+                <el-input v-model="form.ftype"></el-input>
+            </el-form-item>
+            <el-form-item label="基金余量">
+                <el-input v-model="form.famount"></el-input>
+            </el-form-item>
+            <el-form-item label="风险等级">
+                <el-input v-model="form.riskLevel"></el-input>
+            </el-form-item>
+            <el-form-item label="基金经理">
+                <el-input v-model="form.fmanager"></el-input>
+            </el-form-item>
+            <el-form-item label="基金等级">
+                <el-input v-model="form.flevel"></el-input>
+            </el-form-item>
+            <el-form-item label="添加时间">
+                <el-input v-model="form.createTime"></el-input>
+            </el-form-item>
+        </el-form>
+        <span slot="footer" class="dialog-footer">
+            <el-button @click="dialogVisible = false">取 消</el-button>
+            <el-button type="primary" @click="save">确 定</el-button>
+        </span>
+    </el-dialog>
+
+</div>
+
+<script src="jquery.min.js"></script>
+<script src="vue.js"></script>
+<!-- 引入组件库 -->
+<script src="element.js"></script>
+
+<script>
+    new Vue({
+        el: '#app',
+        data: {
+            page: {},
+            name: '',
+            pageNum: 1,
+            pageSize: 8,
+            dialogVisible: false,
+            form: {}
+        },
+        created() {
+            this.loadTable(this.pageNum);
+        },
+        methods: {
+            loadTable(num) {
+                this.pageNum = num;
+                $.get("/fund/page?pageNum=" + this.pageNum + "&pageSize=" + this.pageSize + "&name=" + this.name).then(res => {
+                    this.page = res.data;
+                });
+            },
+            search(num) {
+                this.loadTable(num);
+                this.$message({
+                    showClose: true,
+                    message: '查询数据成功',
+                    type: 'warning'
+                });
+            },
+            add() {
+                this.dialogVisible = true;
+                this.form = {};
+            },
+            edit(row) {
+                this.form = row;
+                this.dialogVisible = true;
+            },
+            save() {
+                let data = JSON.stringify(this.form);
+                if (this.form.id) {
+                    // 编辑
+                    $.ajax({
+                        url: '/fund',
+                        type: 'put',
+                        contentType: 'application/json',
+                        data: data
+                    }).then(res => {
+                        this.dialogVisible = false;
+                        this.loadTable(1);
+                        this.$message({
+                            showClose: true,
+                            message: '修改一条数据成功',
+                            type: 'success'
+                        });
+                    })
+                } else {
+                    // 新增
+                    $.ajax({
+                        url: '/fund',
+                        type: 'post',
+                        contentType: 'application/json',
+                        data: data
+                    }).then(res => {
+                        this.dialogVisible = false;
+                        this.loadTable(1);
+                        this.$message({
+                            showClose: true,
+                            message: '新增一条数据成功',
+                            type: 'success'
+                        });
+                    })
+                }
+            },
+            del(id) {
+                $.ajax({
+                    url: '/fund/' + id,
+                    type: 'delete',
+                    contentType: 'application/json'
+                }).then(res => {
+                    this.loadTable(1);
+                    this.$message({
+                        showClose: true,
+                        message: '删除一条数据成功',
+                        type: 'warning'
+                    });
+                })
+            }
+        }
+    })
+</script>
+</body>
+</html>
