@@ -1,0 +1,2 @@
+# springboot_vue
+本项目需要在IDE上配置好maven环境，将application.xml中的数据库修改为本地数据库的用户名和密码即可运行。
